@@ -138,6 +138,7 @@
 
 .rotary {
   width: 70%;
+  min-width: 110px;
   max-width: 240px;
   aspect-ratio: 1;
   position: relative;
@@ -214,7 +215,7 @@
 
 .sliders {
   display: flex;
-  gap: 36px;
+  gap: clamp(20px, 4vw, 36px);
   height: 75%;
   align-items: stretch;
   justify-content: center;

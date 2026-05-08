@@ -180,7 +180,18 @@ function PowerCluster({ cx, cy, on, onToggle }) {
           transition: 'fill 0.3s, filter 0.3s',
         }}
       />
-      <g onClick={onToggle} style={{ cursor: 'pointer' }}>
+      <g
+        onClick={onToggle}
+        style={{ cursor: 'pointer' }}
+        role="button"
+        aria-label={on ? 'Power off' : 'Power on'}
+      >
+        {/* Invisible expanded touch target */}
+        <rect
+          x={cx - 28} y={cy - 6}
+          width="56" height="38"
+          fill="transparent"
+        />
         <ellipse
           cx={cx} cy={cy + 12}
           rx="14" ry="5"
@@ -253,10 +264,20 @@ function SourceSelector({ cx, cy, index, positions, onClick }) {
         )
       })}
 
+      {/* Invisible larger touch target around the teardrop */}
+      <circle
+        cx={cx} cy={cy}
+        r="56"
+        fill="transparent"
+        onClick={onClick}
+        style={{ cursor: 'pointer' }}
+        role="button"
+        aria-label="Cycle source"
+      />
       <g
         transform={`translate(${cx}, ${cy}) rotate(${angle})`}
         onClick={onClick}
-        style={{ cursor: 'pointer', transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+        style={{ cursor: 'pointer', transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)', pointerEvents: 'none' }}
         filter="url(#knob-shadow)"
       >
         <path d={teardropPath} fill="var(--knob-black)" />
@@ -287,13 +308,16 @@ function RotaryKnob({ cx, cy, value, onChange, label, bipolar = false }) {
   const handlePointerDown = (e) => {
     e.stopPropagation()
     e.target.setPointerCapture?.(e.pointerId)
-    dragRef.current = { startY: e.clientY, startVal: value }
+    dragRef.current = { startX: e.clientX, startY: e.clientY, startVal: value }
   }
   const handlePointerMove = (e) => {
     if (!dragRef.current) return
     e.stopPropagation()
+    // Combine vertical (up = increase) and horizontal (right = increase) drag.
     const deltaY = dragRef.current.startY - e.clientY
-    onChange(dragRef.current.startVal + deltaY / 200)
+    const deltaX = e.clientX - dragRef.current.startX
+    const delta = Math.abs(deltaY) >= Math.abs(deltaX) ? deltaY : deltaX
+    onChange(dragRef.current.startVal + delta / 180)
   }
   const handlePointerUp = (e) => {
     if (dragRef.current) {
@@ -341,7 +365,14 @@ function RotaryKnob({ cx, cy, value, onChange, label, bipolar = false }) {
         onPointerCancel={handlePointerUp}
         style={{ cursor: 'grab', touchAction: 'none' }}
         filter="url(#knob-shadow)"
+        role="slider"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(value * 100)}
       >
+        {/* Invisible expanded touch target — full tick ring */}
+        <circle cx={cx} cy={cy} r={r + 6} fill="transparent" />
         <circle cx={cx} cy={cy} r={knobR} fill="var(--knob-black)" />
         <circle cx={cx - 6} cy={cy - 8} r={knobR - 4} fill="url(#knob-highlight)" opacity="0.18" pointerEvents="none" />
         <line
@@ -400,7 +431,15 @@ function StatusCluster({ cx, cy, active, onSelect }) {
             <g
               onClick={() => onSelect(i)}
               style={{ cursor: 'pointer' }}
+              role="button"
+              aria-label={`${item.label} ${isActive ? 'selected' : ''}`}
             >
+              {/* Invisible expanded touch target */}
+              <rect
+                x={cx - 14} y={y - 14}
+                width="50" height="28"
+                fill="transparent"
+              />
               <ellipse
                 cx={cx + 4}
                 cy={y}
