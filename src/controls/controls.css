@@ -137,9 +137,9 @@
 /* ─── Rotary knob ─── */
 
 .rotary {
-  width: 70%;
-  min-width: 110px;
-  max-width: 240px;
+  width: min(70%, 60vh);
+  min-width: 140px;
+  max-width: 360px;
   aspect-ratio: 1;
   position: relative;
   display: grid; place-items: center;
@@ -215,15 +215,15 @@
 
 .sliders {
   display: flex;
-  gap: clamp(20px, 4vw, 36px);
-  height: 75%;
+  gap: clamp(20px, 4vw, 56px);
+  height: 92%;
   align-items: stretch;
   justify-content: center;
 }
 
 .slider {
   position: relative;
-  width: 28px;
+  width: 32px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -232,22 +232,22 @@
 }
 
 .slider__top-pip {
-  width: 6px; height: 6px;
+  width: 7px; height: 7px;
   border-radius: 50%;
   background: var(--bg-shade);
   box-shadow:
     inset 2px 2px 5px var(--neu-shade),
     inset -2px -2px 5px var(--neu-light);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   flex-shrink: 0;
 }
 
 .slider__track {
   position: relative;
   flex: 1;
-  width: 4px;
+  width: 5px;
   background: var(--bg-shade);
-  border-radius: 2px;
+  border-radius: 3px;
   box-shadow:
     inset 1px 1px 2px var(--neu-shade),
     inset -1px -1px 2px var(--neu-light);
@@ -256,12 +256,12 @@
 .slider__handle {
   position: absolute;
   left: 50%;
-  width: 28px; height: 44px;
-  border-radius: 14px;
+  width: 34px; height: 52px;
+  border-radius: 16px;
   background: linear-gradient(145deg, var(--plastic) 0%, var(--plastic-edge) 100%);
   box-shadow:
     -3px -3px 6px var(--neu-light),
-    3px 3px 8px var(--neu-shade),
+    3px 3px 10px var(--neu-shade),
     inset 0 1px 1px rgba(255, 255, 255, 0.7);
   transform: translate(-50%, -50%);
   cursor: grab;

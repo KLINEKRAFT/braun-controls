@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { DeviceProvider, useDevice } from './DeviceContext.jsx'
-import CSV13Amp from './CSV13Amp.jsx'
 import Dial from './Dial.jsx'
 import SlideToggle from './controls/SlideToggle.jsx'
 import TwinButton from './controls/TwinButton.jsx'
@@ -18,201 +17,105 @@ export default function App() {
 }
 
 function Page() {
-  const {
-    theme, power,
-    view,
-    volume, balance, bass, treble,
-    activeStatus,
-  } = useDevice()
+  const { theme, signal } = useDevice()
 
-  // Apply theme to <html> for global reach (selection color, scrollbar, etc.)
   useEffect(() => {
     document.documentElement.dataset.theme = theme
   }, [theme])
 
-  /* Compute CSS variables from knob state.
-     - bass (0..1) → shadow depth multiplier (0.2..2.5)
-     - treble (0..1) → border alpha (0..0.30)
-     - volume (0..1) → density padding multiplier (0.5..1.4)
-     - balance (0..1) → horizontal layout shift (-3..+3 percent) */
-  const cssVars = {
-    '--shadow-depth': (0.2 + bass * 2.3).toFixed(2),
-    '--stroke-alpha': (treble * 0.30).toFixed(3),
-    '--density-padding': (0.5 + volume * 0.9).toFixed(2),
-    '--balance-shift': ((balance - 0.5) * 6).toFixed(1),
-  }
-
   return (
-    <div className="page" data-power={power ? 'on' : 'off'} style={cssVars}>
-      <main className="shell">
-        <header className="masthead">
-          <div className="masthead__title-row">
-            <h1 className="masthead__title">
-              braun <em>controls</em>
-            </h1>
-            <Dial size={88} />
-          </div>
-          <div className="masthead__meta">
-            <strong>klinekraft / 2026</strong>
-            <span>after dieter rams · 1965</span>
-            <span>tulsa, ok</span>
-          </div>
-        </header>
-
-        <section className="subhead">
-          <p>
-            A study in hardware interface design after Dieter Rams.
-            The amp at the top is not a decoration — every control on it
-            does something to this page. Drag a knob, twist the dial,
-            press the button. The page is the device.
-          </p>
-          <blockquote className="subhead__quote">
-            “Indifference towards the people who use the product is one
-            of the cardinal sins of design.”
-          </blockquote>
-        </section>
-
-        {/* Hero — flat SVG amp. Horizontal scroll on small screens keeps
-            controls touch-sized; the fade hints scrollability. */}
-        <section className="hero">
-          <div className="hero__scroll" role="region" aria-label="Amplifier controls">
-            <CSV13Amp />
-          </div>
-          <div className="hero__caption">
-            <span><strong>csv 13</strong> — stereo amplifier, 1965</span>
-            <span className="hero__caption-hint" aria-hidden="true">drag knobs · swipe to pan</span>
-            <span>dieter rams · braun ag</span>
-          </div>
-        </section>
-
-        {/* Now-playing strip — shows the current view + live readouts */}
-        <NowPlaying view={view} volume={volume} balance={balance} bass={bass} treble={treble} />
-
-        <ControlStudy />
-
-        <footer className="foot">
-          <span>tulsa ok · 36.15°n 95.99°w</span>
-          <a
-            className="foot__center"
-            href="https://colinkline.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="KLINEKRAFT"
-          >
-            <img
-              className="foot__logo"
-              src="/klinekraft_logo.svg"
-              alt="KLINEKRAFT Design Co"
-            />
-          </a>
-          <span className="foot__right">less, but better.</span>
-        </footer>
-      </main>
-    </div>
-  )
-}
-
-function NowPlaying({ view, volume, balance, bass, treble }) {
-  const balLetter = balance < 0.5 ? 'L' : balance > 0.5 ? 'R' : 'C'
-  const metrics = [
-    ['vol',  Math.round(volume * 100).toString().padStart(2, '0')],
-    ['bal',  `${balLetter}${Math.round(Math.abs(balance - 0.5) * 100).toString().padStart(2, '0')}`],
-    ['bass', Math.round(bass * 100).toString().padStart(2, '0')],
-    ['treb', Math.round(treble * 100).toString().padStart(2, '0')],
-  ]
-  return (
-    <div className="now-playing">
-      <div className="now-playing__main">
-        <span className="now-playing__indicator" aria-hidden="true" />
-        <div className="now-playing__label">
-          <span className="now-playing__title">{view.label}</span>
-          <span className="now-playing__desc">{view.description}</span>
-        </div>
-      </div>
-      <div className="now-playing__metric">
-        {metrics.map(([k, v]) => (
-          <span key={k} className="now-playing__chip">
-            {k}&nbsp;<strong>{v}</strong>
-          </span>
-        ))}
+    <div className="page" data-signal={signal ?? 'none'}>
+      <div className="grid">
+        <Tiles />
       </div>
     </div>
   )
 }
 
-function ControlStudy() {
+function Tiles() {
+  const { flash } = useDevice()
+
   const [slide, setSlide] = useState(true)
   const [twin, setTwin] = useState(0)
   const [knob, setKnob] = useState(38)
   const [sliders, setSliders] = useState([55, 38, 72])
-  const [pushCount, setPushCount] = useState(0)
+  const [pushed, setPushed] = useState(false)
   const [mini, setMini] = useState(false)
 
   return (
     <>
-      <div className="section-label">
-        <span className="section-label__index">02</span>
-        <span className="section-label__title">control study</span>
-        <span className="section-label__hint">
-          six interactive elements · click, drag, slide
-        </span>
-      </div>
+      <Tile className="tile-rotary" signal="orange" onPressFlash={flash}>
+        <RotaryKnob value={knob} onChange={setKnob} />
+      </Tile>
 
-      <div className="grid">
-        <article className="panel" aria-label="Power slide toggle">
-          <span className="panel__label">no. 01 · power</span>
-          <span className="panel__index">i</span>
-          <SlideToggle value={slide} onChange={setSlide} />
-          <span className="panel__readout">
-            state · <strong>{slide ? 'on' : 'off'}</strong>
-          </span>
-        </article>
+      <Tile className="tile-sliders" signal="green" onPressFlash={flash}>
+        <VerticalSliders values={sliders} onChange={setSliders} />
+      </Tile>
 
-        <article className="panel" aria-label="Channel selector">
-          <span className="panel__label">no. 02 · channel</span>
-          <span className="panel__index">ii</span>
-          <TwinButton value={twin} onChange={setTwin} />
-          <span className="panel__readout">
-            ch · <strong>{twin === 0 ? 'a' : 'b'}</strong>
-          </span>
-        </article>
+      <Tile className="tile-slide" signal="orange" onPressFlash={flash}>
+        <SlideToggle value={slide} onChange={setSlide} />
+      </Tile>
 
-        <article className="panel" aria-label="Rotary knob">
-          <span className="panel__label">no. 03 · gain</span>
-          <span className="panel__index">iii</span>
-          <RotaryKnob value={knob} onChange={setKnob} />
-          <span className="panel__readout">
-            db · <strong>{knob.toString().padStart(2, '0')}</strong>
-          </span>
-        </article>
+      <Tile className="tile-twin" signal="yellow" onPressFlash={flash}>
+        <TwinButton value={twin} onChange={setTwin} />
+      </Tile>
 
-        <article className="panel" aria-label="Vertical slider bank">
-          <span className="panel__label">no. 04 · mix</span>
-          <span className="panel__index">iv</span>
-          <VerticalSliders values={sliders} onChange={setSliders} />
-          <span className="panel__readout">
-            l <strong>{sliders[0]}</strong> · m <strong>{sliders[1]}</strong> · h <strong>{sliders[2]}</strong>
-          </span>
-        </article>
+      <Tile className="tile-dial" signal="blue" onPressFlash={flash}>
+        <Dial size={140} />
+      </Tile>
 
-        <article className="panel" aria-label="Push button">
-          <span className="panel__label">no. 05 · trigger</span>
-          <span className="panel__index">v</span>
-          <PushButton onPress={() => setPushCount(c => c + 1)} />
-          <span className="panel__readout">
-            count · <strong>{pushCount.toString().padStart(3, '0')}</strong>
-          </span>
-        </article>
+      <Tile className="tile-push" signal="red" onPressFlash={flash}>
+        <PushButton onPress={() => setPushed((p) => !p)} />
+      </Tile>
 
-        <article className="panel" aria-label="Standby toggle">
-          <span className="panel__label">no. 06 · standby</span>
-          <span className="panel__index">vi</span>
-          <MiniToggle value={mini} onChange={setMini} />
-          <span className="panel__readout">
-            mode · <strong>{mini ? 'active' : 'idle'}</strong>
-          </span>
-        </article>
-      </div>
+      <Tile className="tile-mini" signal="orange" onPressFlash={flash}>
+        <MiniToggle value={mini} onChange={setMini} />
+      </Tile>
+
+      <a
+        className="tile tile-logo"
+        href="https://colinkline.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="KLINEKRAFT"
+      >
+        <img className="tile-logo__img" src="/klinekraft_logo.svg" alt="" aria-hidden="true" />
+      </a>
     </>
+  )
+}
+
+function Tile({ children, className = '', signal, onPressFlash }) {
+  const ref = useRef(null)
+
+  const handlePointerDown = useCallback(
+    (e) => {
+      const el = ref.current
+      if (el) {
+        const rect = el.getBoundingClientRect()
+        el.style.setProperty('--ripple-x', `${e.clientX - rect.left}px`)
+        el.style.setProperty('--ripple-y', `${e.clientY - rect.top}px`)
+        el.dataset.pressed = 'true'
+        // Strip the marker on the next frame so the animation can replay.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (el) el.dataset.pressed = 'false'
+          })
+        })
+      }
+      if (signal && onPressFlash) onPressFlash(signal)
+    },
+    [signal, onPressFlash],
+  )
+
+  return (
+    <section
+      ref={ref}
+      className={`tile ${className}`}
+      onPointerDown={handlePointerDown}
+    >
+      <span className="tile__ripple" aria-hidden="true" />
+      {children}
+    </section>
   )
 }
