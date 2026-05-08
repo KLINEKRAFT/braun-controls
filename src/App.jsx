@@ -46,15 +46,17 @@ function Page() {
     <div className="page" data-power={power ? 'on' : 'off'} style={cssVars}>
       <main className="shell">
         <header className="masthead">
-          <h1 className="masthead__title">
-            braun <em>controls</em>
-          </h1>
+          <div className="masthead__title-row">
+            <h1 className="masthead__title">
+              braun <em>controls</em>
+            </h1>
+            <Dial size={88} />
+          </div>
           <div className="masthead__meta">
             <strong>klinekraft / 2026</strong>
             <span>after dieter rams · 1965</span>
             <span>tulsa, ok</span>
           </div>
-          <Dial size={88} />
         </header>
 
         <section className="subhead">
@@ -70,11 +72,15 @@ function Page() {
           </blockquote>
         </section>
 
-        {/* Hero — flat SVG amp */}
+        {/* Hero — flat SVG amp. Horizontal scroll on small screens keeps
+            controls touch-sized; the fade hints scrollability. */}
         <section className="hero">
-          <CSV13Amp />
+          <div className="hero__scroll" role="region" aria-label="Amplifier controls">
+            <CSV13Amp />
+          </div>
           <div className="hero__caption">
             <span><strong>csv 13</strong> — stereo amplifier, 1965</span>
+            <span className="hero__caption-hint" aria-hidden="true">drag knobs · swipe to pan</span>
             <span>dieter rams · braun ag</span>
           </div>
         </section>
@@ -107,21 +113,28 @@ function Page() {
 }
 
 function NowPlaying({ view, volume, balance, bass, treble }) {
+  const balLetter = balance < 0.5 ? 'L' : balance > 0.5 ? 'R' : 'C'
+  const metrics = [
+    ['vol',  Math.round(volume * 100).toString().padStart(2, '0')],
+    ['bal',  `${balLetter}${Math.round(Math.abs(balance - 0.5) * 100).toString().padStart(2, '0')}`],
+    ['bass', Math.round(bass * 100).toString().padStart(2, '0')],
+    ['treb', Math.round(treble * 100).toString().padStart(2, '0')],
+  ]
   return (
     <div className="now-playing">
-      <span className="now-playing__indicator" aria-hidden="true" />
-      <div className="now-playing__label">
-        <span className="now-playing__title">{view.label}</span>
-        <span className="now-playing__desc">{view.description}</span>
+      <div className="now-playing__main">
+        <span className="now-playing__indicator" aria-hidden="true" />
+        <div className="now-playing__label">
+          <span className="now-playing__title">{view.label}</span>
+          <span className="now-playing__desc">{view.description}</span>
+        </div>
       </div>
       <div className="now-playing__metric">
-        vol&nbsp;<strong>{Math.round(volume * 100).toString().padStart(2, '0')}</strong>
-        <span style={{ margin: '0 6px', opacity: 0.4 }}>·</span>
-        bal&nbsp;<strong>{balance < 0.5 ? 'L' : balance > 0.5 ? 'R' : 'C'}{Math.round(Math.abs(balance - 0.5) * 100).toString().padStart(2, '0')}</strong>
-        <span style={{ margin: '0 6px', opacity: 0.4 }}>·</span>
-        bass&nbsp;<strong>{Math.round(bass * 100).toString().padStart(2, '0')}</strong>
-        <span style={{ margin: '0 6px', opacity: 0.4 }}>·</span>
-        treb&nbsp;<strong>{Math.round(treble * 100).toString().padStart(2, '0')}</strong>
+        {metrics.map(([k, v]) => (
+          <span key={k} className="now-playing__chip">
+            {k}&nbsp;<strong>{v}</strong>
+          </span>
+        ))}
       </div>
     </div>
   )
@@ -140,7 +153,7 @@ function ControlStudy() {
       <div className="section-label">
         <span className="section-label__index">02</span>
         <span className="section-label__title">control study</span>
-        <span style={{ marginLeft: 'auto', color: 'var(--ink-faint)' }}>
+        <span className="section-label__hint">
           six interactive elements · click, drag, slide
         </span>
       </div>
